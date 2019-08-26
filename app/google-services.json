@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "319332274630",
+    "firebase_url": "https://coffeebeanapp-f16bb.firebaseio.com",
+    "project_id": "coffeebeanapp-f16bb",
+    "storage_bucket": "coffeebeanapp-f16bb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:319332274630:android:2128bdfcd8ac7993",
+        "android_client_info": {
+          "package_name": "com.ncku_tainan.coffeebean"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "319332274630-s019b6sie7mv9804ibljo1a4ivvqsdct.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJ4jdTuddDAimlmoACEeEU11IA2pnKZYA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "319332274630-s019b6sie7mv9804ibljo1a4ivvqsdct.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
