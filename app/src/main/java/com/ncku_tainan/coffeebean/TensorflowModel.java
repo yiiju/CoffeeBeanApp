@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -22,7 +21,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -44,27 +45,29 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+;import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import java.io.File;
 
+import static com.ncku_tainan.coffeebean.MainActivity.select_model;
+
 
 public class TensorflowModel  extends AppCompatActivity {
-    private Button takePictureButton;
-    private Button showPictureButton;
+    private ImageButton takePictureButton;
+    private ImageButton showPictureButton;
     private ImageView imageView;
+    private TextView resultText;
+
     public static final int TAKE_PHOTO_IMAGE_CODE = 29;
     public static final int SHOW_PHOTO_IMAGE_CODE = 30;
     public static final String FileName = "CoffeeBeanApp";
     public static Uri file;
 
     private static final String TAG = "TensorflowModel";
-    private static final String HOSTED_MODEL_NAME = "basic_cnn";
-    private static final String LOCAL_MODEL_NAME = "local_basic_cnn";
-    private static final String LOCAL_MODEL_ASSET = "basic_cnn.tflite";
+    private static String HOSTED_MODEL_NAME = "basic_cnn";
+    private static String LOCAL_MODEL_NAME = "local_basic_cnn";
+    private static String LOCAL_MODEL_ASSET = "basic_cnn.tflite";
     private static final String LABEL_PATH = "retrained_labels.txt";
     private static final int RESULTS_TO_SHOW = 3;
     private static final int DIM_BATCH_SIZE = 1;
@@ -81,11 +84,14 @@ public class TensorflowModel  extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tensorflowmodel);
         getSupportActionBar().hide(); //隱藏標題
+        int ColorValue = Color.parseColor("#462F0E");
+        getWindow().setStatusBarColor(ColorValue);
         //getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN); //隱藏狀態
 
-        takePictureButton = findViewById(R.id.button_image);
+        takePictureButton = findViewById(R.id.take_image);
         showPictureButton = findViewById(R.id.show_image);
         imageView = findViewById(R.id.imageview);
+        resultText = findViewById(R.id.result_text);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             takePictureButton.setEnabled(false);
@@ -96,12 +102,6 @@ public class TensorflowModel  extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 takePicture();
-                try {
-                    runInference();
-                } catch (FirebaseMLException e) {
-                    e.printStackTrace();
-                    showToast("Error running model inference");
-                }
             }
         });
 
@@ -111,15 +111,10 @@ public class TensorflowModel  extends AppCompatActivity {
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
                 photoPickerIntent.setType("image/*");
                 startActivityForResult(photoPickerIntent, SHOW_PHOTO_IMAGE_CODE);
-                try {
-                    runInference();
-                } catch (FirebaseMLException e) {
-                    e.printStackTrace();
-                    showToast("Error running model inference");
-                }
             }
         });
 
+        selectModel();
         initCustomModel();
     }
 
@@ -132,6 +127,36 @@ public class TensorflowModel  extends AppCompatActivity {
         } catch (FirebaseMLException e) {
             showToast("Error while setting up the model");
             e.printStackTrace();
+        }
+    }
+
+    private void selectModel() {
+        switch(select_model) {
+            case 1:
+                HOSTED_MODEL_NAME = "basic_cnn";
+                LOCAL_MODEL_NAME = "local_basic_cnn";
+                LOCAL_MODEL_ASSET = "basic_cnn.tflite";
+                break;
+            case 2:
+                HOSTED_MODEL_NAME = "aug_cnn";
+                LOCAL_MODEL_NAME = "local_aug_cnn";
+                LOCAL_MODEL_ASSET = "aug_cnn.tflite";
+                break;
+            case 3:
+                HOSTED_MODEL_NAME = "t_vgg16_cnn";
+                LOCAL_MODEL_NAME = "local_t_vgg16_cnn";
+                LOCAL_MODEL_ASSET = "t_vgg16_cnn.tflite";
+                break;
+            case 4:
+                HOSTED_MODEL_NAME = "t_vgg16_aug_cnn";
+                LOCAL_MODEL_NAME = "local_t_vgg16_aug_cnn";
+                LOCAL_MODEL_ASSET = "t_vgg16_aug_cnn.tflite";
+                break;
+            case 5:
+                HOSTED_MODEL_NAME = "t_vgg16_finetuning_aug_cnn_5x";
+                LOCAL_MODEL_NAME = "local_t_vgg16_finetuning_aug_cnn_5x";
+                LOCAL_MODEL_ASSET = "t_vgg16_finetuning_aug_cnn_5x.tflite";
+                break;
         }
     }
 
@@ -199,11 +224,6 @@ public class TensorflowModel  extends AppCompatActivity {
 
     private float[][][][] bitmapToInputArray(Context context) {
         // [START mlkit_bitmap_input]
-//        Bitmap bitmap = getBitmapFromUri(this);
-//        URL url = new URL(file.toString());
-//        is = url.openStream();
-//        bitmap = BitmapFactory.decodeStream(is);
-
 //        AssetManager assetManager = context.getAssets();
 //        InputStream is;
 //        Bitmap bitmap = null;
@@ -216,7 +236,7 @@ public class TensorflowModel  extends AppCompatActivity {
 //        }
 
         Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
-//        bitmap = Bitmap.createScaledBitmap(bitmap, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, true);
+        bitmap = Bitmap.createScaledBitmap(bitmap, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, true);
 
         int batchNum = 0;
         float[][][][] input = new float[DIM_BATCH_SIZE][DIM_IMG_SIZE_X][DIM_IMG_SIZE_Y][DIM_PIXEL_SIZE];
@@ -276,10 +296,18 @@ public class TensorflowModel  extends AppCompatActivity {
         // [START mlkit_use_inference_result]
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(getAssets().open("retrained_labels.txt")));
+        float pred_prob = 0;
+        String pred_label = "";
         for (int i = 0; i < probabilities.length; i++) {
             String label = reader.readLine();
+            if(probabilities[i] > pred_prob) {
+                pred_prob = probabilities[i];
+                pred_label = label;
+            }
             Log.i("MLKit", String.format("%s: %1.4f", label, probabilities[i]));
         }
+        String source = String.format("%s: %1.4f", pred_label, pred_prob);
+        resultText.setText(source);
         // [END mlkit_use_inference_result]
     }
 
@@ -309,6 +337,12 @@ public class TensorflowModel  extends AppCompatActivity {
         if (requestCode == TAKE_PHOTO_IMAGE_CODE) {
             if (resultCode == RESULT_OK) {
                 imageView.setImageURI(file);
+                try {
+                    runInference();
+                } catch (FirebaseMLException e) {
+                    e.printStackTrace();
+                    showToast("Error running model inference");
+                }
             }
         }
         if (requestCode == SHOW_PHOTO_IMAGE_CODE) {
@@ -317,11 +351,16 @@ public class TensorflowModel  extends AppCompatActivity {
                     final Uri imageUri = data.getData();
                     final InputStream imageStream = getContentResolver().openInputStream(imageUri);
                     final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-//                    Bitmap bitmap = Bitmap.createScaledBitmap(selectedImage, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, true);
-                    imageView.setImageBitmap(selectedImage);
+                    Bitmap bitmap = Bitmap.createScaledBitmap(selectedImage, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, true);
+                    imageView.setImageBitmap(bitmap);
+                    try {
+                        runInference();
+                    } catch (FirebaseMLException e) {
+                        e.printStackTrace();
+                        showToast("Error running model inference");
+                    }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
-//                Toast.makeText(PostImage.this, "Something went wrong", Toast.LENGTH_LONG).show();
                 }
             }
         }
