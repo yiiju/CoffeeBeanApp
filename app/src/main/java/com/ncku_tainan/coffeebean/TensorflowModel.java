@@ -296,18 +296,13 @@ public class TensorflowModel  extends AppCompatActivity {
         // [START mlkit_use_inference_result]
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(getAssets().open("retrained_labels.txt")));
-        float pred_prob = 0;
-        String pred_label = "";
+        String show_text = "預測結果: \n";
         for (int i = 0; i < probabilities.length; i++) {
             String label = reader.readLine();
-            if(probabilities[i] > pred_prob) {
-                pred_prob = probabilities[i];
-                pred_label = label;
-            }
             Log.i("MLKit", String.format("%s: %1.4f", label, probabilities[i]));
+            show_text = show_text + String.format("%s: %1.4f", label, probabilities[i]) + '\n';
         }
-        String source = String.format("%s: %1.4f", pred_label, pred_prob);
-        resultText.setText(source);
+        resultText.setText(show_text);
         // [END mlkit_use_inference_result]
     }
 
